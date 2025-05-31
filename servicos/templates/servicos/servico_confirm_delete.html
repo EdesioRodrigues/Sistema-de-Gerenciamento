@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Confirmar Exclusão</h1>
+            <p class="lead">Tem certeza que deseja excluir o serviço "{{ servico.nome }}"?</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'servico_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">Atenção!</h5>
+                <p>Esta ação não pode ser desfeita. Todos os dados relacionados a este serviço serão excluídos permanentemente.</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Detalhes do Serviço</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Nome:</dt>
+                        <dd class="col-sm-9">{{ servico.nome }}</dd>
+                        
+                        <dt class="col-sm-3">Descrição:</dt>
+                        <dd class="col-sm-9">{{ servico.descricao|default:"Sem descrição" }}</dd>
+                        
+                        <dt class="col-sm-3">Preço:</dt>
+                        <dd class="col-sm-9">R$ {{ servico.preco }}</dd>
+                        
+                        <dt class="col-sm-3">Duração:</dt>
+                        <dd class="col-sm-9">{{ servico.duracao }} minutos</dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            {% if servico.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'servico_list' %}" class="btn btn-secondary me-md-2">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Confirmar Exclusão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

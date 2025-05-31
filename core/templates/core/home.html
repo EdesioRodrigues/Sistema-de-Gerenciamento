@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .card-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .dashboard-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .action-card {
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .action-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <!-- Resumo -->
+    <div class="card">
+        <div class="card-header">Resumo</div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3 mb-3">
+                    <div class="text-primary">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <div class="dashboard-number">{{ total_clientes }}</div>
+                    <div>Clientes</div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="text-success">
+                        <i class="fas fa-list-check fa-2x"></i>
+                    </div>
+                    <div class="dashboard-number">{{ total_servicos }}</div>
+                    <div>Serviços</div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="text-warning">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                    <div class="dashboard-number">{{ total_ordens }}</div>
+                    <div>Ordens</div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="text-info">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                    <div class="dashboard-number">{{ total_relatorios }}</div>
+                    <div>Relatórios</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="card">
+        <div class="card-header">Ações Rápidas</div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3 mb-3">
+                    <a href="{% url 'cliente_create' %}" class="action-card text-primary">
+                        <div class="action-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>Novo Cliente</div>
+                    </a>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <a href="{% url 'servico_create' %}" class="action-card text-success">
+                        <div class="action-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div>Novo Serviço</div>
+                    </a>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <a href="{% url 'ordem_create' %}" class="action-card text-warning">
+                        <div class="action-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div>Nova Ordem</div>
+                    </a>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <a href="{% url 'relatorio_create' %}" class="action-card text-info">
+                        <div class="action-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div>Novo Relatório</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ordens Recentes -->
+    <div class="card">
+        <div class="card-header">Ordens Recentes</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cliente</th>
+                            <th>Data/Hora</th>
+                            <th>Status</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ordens_recentes %}
+                            {% for ordem in ordens_recentes %}
+                                <tr>
+                                    <td>{{ ordem.id }}</td>
+                                    <td>
+                                        {% if ordem.cliente %}
+                                            {{ ordem.cliente.nome }}
+                                        {% else %}
+                                            {{ ordem.nome_cliente_avulso }} (Avulso)
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ ordem.data_hora|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if ordem.status == 'agendado' %}info{% elif ordem.status == 'em_andamento' %}warning{% elif ordem.status == 'concluido' %}success{% else %}danger{% endif %}">
+                                            {{ ordem.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>R$ {{ ordem.valor_final }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">Nenhuma ordem registrada.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end mt-3">
+                <a href="{% url 'ordem_list' %}" class="btn btn-primary">
+                    Ver Todas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

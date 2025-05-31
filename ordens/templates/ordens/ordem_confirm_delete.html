@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Confirmar Exclusão</h1>
+            <p class="lead">Tem certeza que deseja excluir a ordem #{{ ordem.id }}?</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ordem_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">Atenção!</h5>
+                <p>Esta ação não pode ser desfeita. Todos os dados relacionados a esta ordem serão excluídos permanentemente.</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Detalhes da Ordem</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Cliente:</dt>
+                        <dd class="col-sm-9">
+                            {% if ordem.cliente %}
+                                {{ ordem.cliente.nome }}
+                            {% else %}
+                                {{ ordem.nome_cliente_avulso }} (Avulso)
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Data/Hora:</dt>
+                        <dd class="col-sm-9">{{ ordem.data_hora|date:"d/m/Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            {% if ordem.status == 'agendado' %}
+                                <span class="badge bg-info">Agendado</span>
+                            {% elif ordem.status == 'em_andamento' %}
+                                <span class="badge bg-warning">Em Andamento</span>
+                            {% elif ordem.status == 'concluido' %}
+                                <span class="badge bg-success">Concluído</span>
+                            {% elif ordem.status == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Valor Total:</dt>
+                        <dd class="col-sm-9">R$ {{ ordem.valor_final }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'ordem_list' %}" class="btn btn-secondary me-md-2">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Confirmar Exclusão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

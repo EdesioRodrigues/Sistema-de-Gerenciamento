@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Novo Relatório</h1>
+            <p class="lead">Gere um novo relatório financeiro para a barbearia.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'relatorio_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="form-floating mb-3">
+                    {{ form.titulo|add_class:"form-control" }}
+                    <label for="{{ form.titulo.id_for_label }}">Título do Relatório</label>
+                    {% if form.titulo.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.titulo.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.tipo|add_class:"form-select" }}
+                    <label for="{{ form.tipo.id_for_label }}">Tipo de Relatório</label>
+                    {% if form.tipo.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.tipo.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.data_inicio|add_class:"form-control" }}
+                            <label for="{{ form.data_inicio.id_for_label }}">Data Inicial</label>
+                            {% if form.data_inicio.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.data_inicio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.data_fim|add_class:"form-control" }}
+                            <label for="{{ form.data_fim.id_for_label }}">Data Final</label>
+                            {% if form.data_fim.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.data_fim.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.email_destino|add_class:"form-control" }}
+                    <label for="{{ form.email_destino.id_for_label }}">Email para Envio (opcional)</label>
+                    <div class="form-text small">Informe um email caso deseje enviar o relatório automaticamente após a geração.</div>
+                    {% if form.email_destino.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.email_destino.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.observacoes|add_class:"form-control" }}
+                    <label for="{{ form.observacoes.id_for_label }}">Observações (opcional)</label>
+                    {% if form.observacoes.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.observacoes.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-chart-line me-1"></i> Gerar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

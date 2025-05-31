@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Cliente: {{ cliente.nome }}</h1>
+            <p class="lead">Detalhes e histórico de atendimentos.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'cliente_list' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+            <a href="{% url 'cliente_update' cliente.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Informações do Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Nome:</dt>
+                        <dd class="col-sm-8">{{ cliente.nome }}</dd>
+                        
+                        <dt class="col-sm-4">Telefone:</dt>
+                        <dd class="col-sm-8">{{ cliente.telefone }}</dd>
+                        
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">{{ cliente.email|default:"Não informado" }}</dd>
+                        
+                        <dt class="col-sm-4">Data de Nascimento:</dt>
+                        <dd class="col-sm-8">
+                            {% if cliente.data_nascimento %}
+                                {{ cliente.data_nascimento|date:"d/m/Y" }}
+                            {% else %}
+                                Não informada
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Data de Cadastro:</dt>
+                        <dd class="col-sm-8">{{ cliente.data_cadastro|date:"d/m/Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Última Visita:</dt>
+                        <dd class="col-sm-8">
+                            {% if cliente.ultima_visita %}
+                                {{ cliente.ultima_visita|date:"d/m/Y H:i" }}
+                            {% else %}
+                                Nunca visitou
+                            {% endif %}
+                        </dd>
+                    </dl>
+                    
+                    {% if cliente.observacoes %}
+                        <div class="mt-3">
+                            <h6>Observações:</h6>
+                            <p class="mb-0">{{ cliente.observacoes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'ordem_create' %}?cliente_id={{ cliente.id }}" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-1"></i> Nova Ordem
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Estatísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-4">
+                            <h2 class="display-6">{{ ordens.count }}</h2>
+                            <p class="text-muted">Total de Visitas</p>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <h2 class="display-6">
+                                {% if ordens %}
+                                    R$ {{ ordens.0.valor_final|floatformat:2 }}
+                                {% else %}
+                                    R$ 0,00
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted">Última Compra</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Histórico de Atendimentos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Data/Hora</th>
+                            <th>Serviços</th>
+                            <th>Status</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ordens %}
+                            {% for ordem in ordens %}
+                            <tr>
+                                <td>{{ ordem.id }}</td>
+                                <td>{{ ordem.data_hora|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% for item in ordem.itens.all %}
+                                        {{ item.servico.nome }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if ordem.status == 'agendado' %}
+                                        <span class="badge bg-info">Agendado</span>
+                                    {% elif ordem.status == 'em_andamento' %}
+                                        <span class="badge bg-warning">Em Andamento</span>
+                                    {% elif ordem.status == 'concluido' %}
+                                        <span class="badge bg-success">Concluído</span>
+                                    {% elif ordem.status == 'cancelado' %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                                <td>R$ {{ ordem.valor_final }}</td>
+                                <td>
+                                    <a href="{% url 'ordem_detail' ordem.id %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">Nenhum atendimento registrado.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

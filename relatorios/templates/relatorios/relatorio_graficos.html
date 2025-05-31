@@ -1,0 +1,474 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    
+    .filter-card {
+        transition: all 0.3s ease;
+    }
+    
+    .filter-card:hover {
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .summary-card {
+        transition: all 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .summary-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .summary-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Visualização Gráfica</h1>
+            <p class="lead">Análise visual dos dados financeiros da barbearia.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'relatorio_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Voltar para Relatórios
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4 filter-card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Filtros</h5>
+            <form id="filtro-form" method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="periodo" class="form-label">Período</label>
+                    <select id="periodo" name="periodo" class="form-select">
+                        <option value="dia" {% if periodo == 'dia' %}selected{% endif %}>Dia Atual</option>
+                        <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Semana Atual</option>
+                        <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Mês Atual</option>
+                        <option value="ano" {% if periodo == 'ano' %}selected{% endif %}>Ano Atual</option>
+                        <option value="personalizado" {% if periodo == 'personalizado' %}selected{% endif %}>Personalizado</option>
+                    </select>
+                </div>
+                
+                <div id="datas-personalizadas" class="row g-3 mt-0" {% if periodo != 'personalizado' %}style="display: none;"{% endif %}>
+                    <div class="col-md-4">
+                        <label for="data_inicio" class="form-label">Data Inicial</label>
+                        <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ data_inicio|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="data_fim" class="form-label">Data Final</label>
+                        <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ data_fim|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Filtrar
+                    </button>
+                    <button type="button" id="btn-atualizar" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-sync-alt me-1"></i> Atualizar Dados
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-4">
+            <div class="card summary-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="summary-icon text-primary">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div id="total-ordens" class="summary-number">{{ dados_graficos.resumo.total_ordens }}</div>
+                    <div class="summary-label">Total de Ordens</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card summary-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="summary-icon text-success">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div id="valor-total" class="summary-number">R$ {{ dados_graficos.resumo.valor_total }}</div>
+                    <div class="summary-label">Valor Total</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card summary-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="summary-icon text-warning">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div id="valor-descontos" class="summary-number">R$ {{ dados_graficos.resumo.valor_descontos }}</div>
+                    <div class="summary-label">Descontos</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card summary-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="summary-icon text-info">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div id="lucro" class="summary-number">R$ {{ dados_graficos.resumo.lucro }}</div>
+                    <div class="summary-label">Lucro</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegação entre gráficos -->
+    <ul class="nav nav-pills mb-4" id="graficos-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="faturamento-tab" data-bs-toggle="pill" data-bs-target="#faturamento" type="button" role="tab" aria-controls="faturamento" aria-selected="true">Faturamento {{ dados_graficos.label_periodo }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pagamentos-tab" data-bs-toggle="pill" data-bs-target="#pagamentos" type="button" role="tab" aria-controls="pagamentos" aria-selected="false">Formas de Pagamento</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="servicos-tab" data-bs-toggle="pill" data-bs-target="#servicos" type="button" role="tab" aria-controls="servicos" aria-selected="false">Serviços Realizados</button>
+        </li>
+    </ul>
+
+    <!-- Conteúdo dos gráficos -->
+    <div class="tab-content" id="graficos-tabContent">
+        <!-- Gráfico de Faturamento -->
+        <div class="tab-pane fade show active" id="faturamento" role="tabpanel" aria-labelledby="faturamento-tab">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Faturamento {{ dados_graficos.label_periodo }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="faturamento-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Formas de Pagamento -->
+        <div class="tab-pane fade" id="pagamentos" role="tabpanel" aria-labelledby="pagamentos-tab">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Distribuição por Forma de Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="pagamentos-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Serviços -->
+        <div class="tab-pane fade" id="servicos" role="tabpanel" aria-labelledby="servicos-tab">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Serviços Mais Realizados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="servicos-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Dados para os gráficos
+    const dadosGraficos = {{ dados_graficos|safe }};
+    
+    // Configuração do gráfico de faturamento
+    const dadosPorPeriodo = dadosGraficos.dados_por_periodo;
+    const labels = dadosPorPeriodo.map(item => item.data);
+    const valoresTotal = dadosPorPeriodo.map(item => item.valor_total);
+    const valoresDescontos = dadosPorPeriodo.map(item => item.valor_descontos);
+    const valoresLucro = dadosPorPeriodo.map(item => item.lucro);
+    
+    const ctxFaturamento = document.getElementById('faturamento-chart').getContext('2d');
+    const faturamentoChart = new Chart(ctxFaturamento, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Valor Total (R$)',
+                    data: valoresTotal,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Lucro (R$)',
+                    data: valoresLucro,
+                    backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                    borderColor: 'rgba(23, 162, 184, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Descontos (R$)',
+                    data: valoresDescontos,
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R$ ' + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Configuração do gráfico de formas de pagamento
+    const dadosPagamento = dadosGraficos.dados_pagamento;
+    
+    const ctxPagamentos = document.getElementById('pagamentos-chart').getContext('2d');
+    const pagamentosChart = new Chart(ctxPagamentos, {
+        type: 'pie',
+        data: {
+            labels: ['Dinheiro', 'Cartão de Débito', 'Cartão de Crédito', 'PIX'],
+            datasets: [{
+                data: [
+                    dadosPagamento.dinheiro,
+                    dadosPagamento.cartao_debito,
+                    dadosPagamento.cartao_credito,
+                    dadosPagamento.pix
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(23, 162, 184, 0.7)',
+                    'rgba(255, 193, 7, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(13, 110, 253, 1)',
+                    'rgba(23, 162, 184, 1)',
+                    'rgba(255, 193, 7, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: R$ ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Configuração do gráfico de serviços
+    const dadosServicos = dadosGraficos.dados_servicos;
+    const labelsServicos = dadosServicos.map(item => item.nome);
+    const valoresServicos = dadosServicos.map(item => item.quantidade);
+    
+    const ctxServicos = document.getElementById('servicos-chart').getContext('2d');
+    const servicosChart = new Chart(ctxServicos, {
+        type: 'bar',
+        data: {
+            labels: labelsServicos,
+            datasets: [{
+                label: 'Quantidade',
+                data: valoresServicos,
+                backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                borderColor: 'rgba(23, 162, 184, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    
+    // Mostrar/ocultar campos de data personalizada
+    $('#periodo').change(function() {
+        if ($(this).val() === 'personalizado') {
+            $('#datas-personalizadas').show();
+        } else {
+            $('#datas-personalizadas').hide();
+        }
+    });
+    
+    // Atualizar dados via AJAX
+    $('#btn-atualizar').click(function() {
+        // Mostrar indicador de carregamento
+        $(this).html('<i class="fas fa-spinner fa-spin me-1"></i> Atualizando...');
+        $(this).prop('disabled', true);
+        
+        // Obter parâmetros do formulário
+        const formData = $('#filtro-form').serialize();
+        
+        $.ajax({
+            url: '{% url "relatorio_graficos" %}',
+            type: 'GET',
+            data: formData,
+            dataType: 'json',
+            success: function(data) {
+                // Atualizar resumo
+                $('#total-ordens').text(data.resumo.total_ordens);
+                $('#valor-total').text('R$ ' + data.resumo.valor_total);
+                $('#valor-descontos').text('R$ ' + data.resumo.valor_descontos);
+                $('#lucro').text('R$ ' + data.resumo.lucro);
+                
+                // Atualizar gráfico de faturamento
+                const labels = data.dados_por_periodo.map(item => item.data);
+                const valoresTotal = data.dados_por_periodo.map(item => item.valor_total);
+                const valoresDescontos = data.dados_por_periodo.map(item => item.valor_descontos);
+                const valoresLucro = data.dados_por_periodo.map(item => item.lucro);
+                
+                faturamentoChart.data.labels = labels;
+                faturamentoChart.data.datasets[0].data = valoresTotal;
+                faturamentoChart.data.datasets[1].data = valoresLucro;
+                faturamentoChart.data.datasets[2].data = valoresDescontos;
+                faturamentoChart.update();
+                
+                // Atualizar gráfico de formas de pagamento
+                pagamentosChart.data.datasets[0].data = [
+                    data.dados_pagamento.dinheiro,
+                    data.dados_pagamento.cartao_debito,
+                    data.dados_pagamento.cartao_credito,
+                    data.dados_pagamento.pix
+                ];
+                pagamentosChart.update();
+                
+                // Atualizar gráfico de serviços
+                const labelsServicos = data.dados_servicos.map(item => item.nome);
+                const valoresServicos = data.dados_servicos.map(item => item.quantidade);
+                
+                servicosChart.data.labels = labelsServicos;
+                servicosChart.data.datasets[0].data = valoresServicos;
+                servicosChart.update();
+                
+                // Restaurar botão
+                $('#btn-atualizar').html('<i class="fas fa-sync-alt me-1"></i> Atualizar Dados');
+                $('#btn-atualizar').prop('disabled', false);
+                
+                // Mostrar notificação de sucesso
+                const toast = `
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-success text-white">
+                                <strong class="me-auto">Sucesso</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                Dados atualizados com sucesso!
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(toast);
+                setTimeout(function() {
+                    $('.toast').toast('hide');
+                }, 3000);
+            },
+            error: function() {
+                // Restaurar botão
+                $('#btn-atualizar').html('<i class="fas fa-sync-alt me-1"></i> Atualizar Dados');
+                $('#btn-atualizar').prop('disabled', false);
+                
+                // Mostrar notificação de erro
+                const toast = `
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-danger text-white">
+                                <strong class="me-auto">Erro</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                Erro ao atualizar os dados. Tente novamente.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(toast);
+                setTimeout(function() {
+                    $('.toast').toast('hide');
+                }, 3000);
+            }
+        });
+    });
+</script>
+{% endblock %}

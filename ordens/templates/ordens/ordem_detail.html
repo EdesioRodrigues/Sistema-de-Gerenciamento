@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Ordem #{{ ordem.id }}</h1>
+            <p class="lead">Detalhes da ordem de serviço.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ordem_list' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+            <a href="{% url 'ordem_update' ordem.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Informações da Ordem</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">
+                            {% if ordem.cliente %}
+                                <a href="{% url 'cliente_detail' ordem.cliente.id %}">{{ ordem.cliente.nome }}</a>
+                            {% else %}
+                                {{ ordem.nome_cliente_avulso }} (Avulso)
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Data/Hora:</dt>
+                        <dd class="col-sm-8">{{ ordem.data_hora|date:"d/m/Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            {% if ordem.status == 'agendado' %}
+                                <span class="badge bg-info">Agendado</span>
+                            {% elif ordem.status == 'em_andamento' %}
+                                <span class="badge bg-warning">Em Andamento</span>
+                            {% elif ordem.status == 'concluido' %}
+                                <span class="badge bg-success">Concluído</span>
+                            {% elif ordem.status == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Forma de Pagamento:</dt>
+                        <dd class="col-sm-8">
+                            {% if ordem.forma_pagamento == 'dinheiro' %}
+                                <i class="fas fa-money-bill-wave text-success me-1"></i> Dinheiro
+                            {% elif ordem.forma_pagamento == 'cartao_debito' %}
+                                <i class="fas fa-credit-card text-primary me-1"></i> Débito
+                            {% elif ordem.forma_pagamento == 'cartao_credito' %}
+                                <i class="fas fa-credit-card text-info me-1"></i> Crédito
+                            {% elif ordem.forma_pagamento == 'pix' %}
+                                <i class="fas fa-qrcode text-warning me-1"></i> PIX
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Registrado por:</dt>
+                        <dd class="col-sm-8">{{ ordem.criado_por.username }}</dd>
+                        
+                        <dt class="col-sm-4">Data de Registro:</dt>
+                        <dd class="col-sm-8">{{ ordem.data_criacao|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                    
+                    {% if ordem.observacoes %}
+                        <div class="mt-3">
+                            <h6>Observações:</h6>
+                            <p class="mb-0">{{ ordem.observacoes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Resumo Financeiro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>Valor Total:</th>
+                                    <td class="text-end">R$ {{ ordem.valor_total }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Desconto:</th>
+                                    <td class="text-end">R$ {{ ordem.desconto }}</td>
+                                </tr>
+                                <tr class="table-active">
+                                    <th>Valor Final:</th>
+                                    <td class="text-end fw-bold">R$ {{ ordem.valor_final }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        {% if ordem.status != 'concluido' and ordem.status != 'cancelado' %}
+                            <a href="{% url 'ordem_concluir' ordem.id %}" class="btn btn-success me-md-2">
+                                <i class="fas fa-check-circle me-1"></i> Concluir
+                            </a>
+                            <a href="{% url 'ordem_cancelar' ordem.id %}" class="btn btn-danger">
+                                <i class="fas fa-times-circle me-1"></i> Cancelar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Serviços Realizados</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Serviço</th>
+                            <th>Preço Unitário</th>
+                            <th>Quantidade</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if itens %}
+                            {% for item in itens %}
+                            <tr>
+                                <td>{{ item.servico.nome }}</td>
+                                <td>R$ {{ item.preco }}</td>
+                                <td>{{ item.quantidade }}</td>
+                                <td>R$ {{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum serviço registrado.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

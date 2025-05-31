@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Serviços</h1>
+            <p class="lead">Gerencie os serviços oferecidos pela barbearia.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'servico_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> Novo Serviço
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Preço</th>
+                            <th>Duração</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if servicos %}
+                            {% for servico in servicos %}
+                            <tr>
+                                <td>{{ servico.nome }}</td>
+                                <td>{{ servico.descricao|truncatechars:50 }}</td>
+                                <td>R$ {{ servico.preco }}</td>
+                                <td>{{ servico.duracao }} min</td>
+                                <td>
+                                    {% if servico.ativo %}
+                                        <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'servico_update' servico.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'servico_delete' servico.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">Nenhum serviço cadastrado.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

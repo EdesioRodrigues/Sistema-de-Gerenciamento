@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Ordens de Serviço</h1>
+            <p class="lead">Gerencie as ordens de serviço da barbearia.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'ordem_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> Nova Ordem
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cliente</th>
+                            <th>Data/Hora</th>
+                            <th>Status</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ordens %}
+                            {% for ordem in ordens %}
+                            <tr>
+                                <td>{{ ordem.id }}</td>
+                                <td>
+                                    {% if ordem.cliente %}
+                                        <a href="{% url 'cliente_detail' ordem.cliente.id %}">{{ ordem.cliente.nome }}</a>
+                                    {% else %}
+                                        {{ ordem.nome_cliente_avulso }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ ordem.data_hora|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if ordem.status == 'agendado' %}
+                                        <span class="badge bg-info">Agendado</span>
+                                    {% elif ordem.status == 'em_andamento' %}
+                                        <span class="badge bg-warning">Em Andamento</span>
+                                    {% elif ordem.status == 'concluido' %}
+                                        <span class="badge bg-success">Concluído</span>
+                                    {% elif ordem.status == 'cancelado' %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ordem.forma_pagamento == 'dinheiro' %}
+                                        <i class="fas fa-money-bill-wave text-success me-1"></i> Dinheiro
+                                    {% elif ordem.forma_pagamento == 'cartao_debito' %}
+                                        <i class="fas fa-credit-card text-primary me-1"></i> Débito
+                                    {% elif ordem.forma_pagamento == 'cartao_credito' %}
+                                        <i class="fas fa-credit-card text-info me-1"></i> Crédito
+                                    {% elif ordem.forma_pagamento == 'pix' %}
+                                        <i class="fas fa-qrcode text-warning me-1"></i> PIX
+                                    {% endif %}
+                                </td>
+                                <td>R$ {{ ordem.valor_final }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'ordem_detail' ordem.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'ordem_update' ordem.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'ordem_delete' ordem.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center">Nenhuma ordem registrada.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

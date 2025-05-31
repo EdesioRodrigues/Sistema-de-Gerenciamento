@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-number {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .dashboard-label {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+    
+    .recent-orders {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Dashboard</h1>
+            <p class="lead">Bem-vindo ao painel de controle da Guto Barber.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button id="refresh-dashboard" class="btn btn-primary">
+                <i class="fas fa-sync-alt me-1"></i> Atualizar Dados
+            </button>
+        </div>
+    </div>
+
+    <!-- Indicadores -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon text-primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div id="total-clientes" class="dashboard-number">{{ total_clientes }}</div>
+                    <div class="dashboard-label">Clientes Cadastrados</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon text-success">
+                        <i class="fas fa-cut"></i>
+                    </div>
+                    <div id="total-servicos" class="dashboard-number">{{ total_servicos }}</div>
+                    <div class="dashboard-label">Serviços Disponíveis</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="dashboard-icon text-info">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div id="total-ordens" class="dashboard-number">{{ total_ordens }}</div>
+                    <div class="dashboard-label">Ordens Registradas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico de Faturamento -->
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Faturamento dos Últimos 7 Dias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="faturamento-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ordens Recentes -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Ordens Recentes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="ordens-recentes" class="recent-orders">
+                        {% include 'core/includes/ordens_recentes.html' %}
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'ordem_list' %}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Dados para o gráfico de faturamento
+    const faturamentoDados = {{ faturamento_diario|safe }};
+    const labels = faturamentoDados.map(item => item.data);
+    const valores = faturamentoDados.map(item => item.valor);
+    
+    // Configuração do gráfico
+    const ctx = document.getElementById('faturamento-chart').getContext('2d');
+    const faturamentoChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Faturamento (R$)',
+                data: valores,
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Função para atualizar os dados do dashboard via AJAX
+    function atualizarDashboard() {
+        // Mostrar indicador de carregamento
+        $('#refresh-dashboard').html('<i class="fas fa-spinner fa-spin me-1"></i> Atualizando...');
+        
+        $.ajax({
+            url: '{% url "get_dashboard_data" %}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                // Atualizar os indicadores
+                $('#total-clientes').text(data.total_clientes);
+                $('#total-servicos').text(data.total_servicos);
+                $('#total-ordens').text(data.total_ordens);
+                
+                // Atualizar as ordens recentes
+                $('#ordens-recentes').html(data.ordens_recentes_html);
+                
+                // Restaurar botão
+                $('#refresh-dashboard').html('<i class="fas fa-sync-alt me-1"></i> Atualizar Dados');
+                
+                // Mostrar notificação de sucesso
+                const toast = `
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-success text-white">
+                                <strong class="me-auto">Sucesso</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                Dashboard atualizado com sucesso!
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(toast);
+                setTimeout(function() {
+                    $('.toast').toast('hide');
+                }, 3000);
+            },
+            error: function() {
+                // Restaurar botão
+                $('#refresh-dashboard').html('<i class="fas fa-sync-alt me-1"></i> Atualizar Dados');
+                
+                // Mostrar notificação de erro
+                const toast = `
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-danger text-white">
+                                <strong class="me-auto">Erro</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                Erro ao atualizar o dashboard. Tente novamente.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(toast);
+                setTimeout(function() {
+                    $('.toast').toast('hide');
+                }, 3000);
+            }
+        });
+    }
+    
+    // Configurar atualização automática a cada 60 segundos
+    setInterval(atualizarDashboard, 60000);
+    
+    // Configurar botão de atualização manual
+    $('#refresh-dashboard').click(function() {
+        atualizarDashboard();
+    });
+</script>
+{% endblock %}
